@@ -1,6 +1,17 @@
-# src/experiments/experiment_runner.py
+"""
+Experiment runner for comparing UCS, Greedy, and A* search algorithms.
+
+Runs multiple grid sizes, obstacle ratios, and random seeds, and logs
+runtime, expanded nodes, and path cost to a single CSV file.
+"""
+
+from __future__ import annotations
 
 from time import perf_counter
+from typing import Dict, List, Tuple
+
+from pathlib import Path
+import csv
 
 from src.graph.grid_builder import GridConfig, build_grid_graph
 from src.algorithms.ucs import uniform_cost_search
@@ -12,8 +23,9 @@ from src.heuristics.euclidean import euclidean
 from src.heuristics.chebyshev import chebyshev
 from src.heuristics.octile import octile
 
-from src.experiments.metrics import SearchMetrics
-from src.experiments.logger import  log_experiment
+
+RESULTS_PATH = Path("data/results/experiment_results.csv")
+RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 HEURISTICS = {
     "manhattan": manhattan,
@@ -22,60 +34,93 @@ HEURISTICS = {
     "octile": octile,
 }
 
-def run_one_experiment(rows, cols, obstacle_ratio, algorithm, heuristic_name=None):
-    cfg = GridConfig(rows, cols, obstacle_ratio, seed=42)
+
+def log_result(row: List) -> None:
+    write_header = not RESULTS_PATH.exists()
+    with open(RESULTS_PATH, "a", newline="") as f:
+        writer = csv.writer(f)
+        if write_header:
+            writer.writerow(
+                [
+                    "algorithm",
+                    "heuristic",
+                    "rows",
+                    "cols",
+                    "obstacle_ratio",
+                    "seed",
+                    "runtime",
+                    "expanded",
+                    "path_cost",
+                ]
+            )
+        writer.writerow(row)
+
+
+def run_one_experiment(
+    rows: int,
+    cols: int,
+    obstacle_ratio: float,
+    seed: int,
+    algorithm: str,
+    heuristic_name: str | None = None,
+) -> None:
+    cfg = GridConfig(rows, cols, obstacle_ratio, seed)
     graph, obstacles = build_grid_graph(cfg)
     start = (0, 0)
     goal = (rows - 1, cols - 1)
 
-    # Select algorithm
     if algorithm == "ucs":
-        fn = lambda: uniform_cost_search(graph, start, goal)
-    elif algorithm == "greedy":
+        def fn():
+            return uniform_cost_search(graph, start, goal)
+    elif algorithm in ("greedy", "astar"):
         h = HEURISTICS[heuristic_name]
-        fn = lambda: greedy_search(graph, start, goal, h)
+        if algorithm == "greedy":
+            def fn():
+                return greedy_search(graph, start, goal, h)
+        else:
+            def fn():
+                return a_star_search(graph, start, goal, h)
     else:
-        h = HEURISTICS[heuristic_name]
-        fn = lambda: a_star_search(graph, start, goal, h)
+        raise ValueError(f"Unknown algorithm: {algorithm}")
 
-    # Time execution
     t0 = perf_counter()
-    path, cost, expanded = fn()
+    path, cost, expanded, _ = fn()
     runtime = perf_counter() - t0
 
-    metrics = SearchMetrics(
-        algorithm=algorithm,
-        heuristic=heuristic_name,
-        grid_size=(rows, cols),
-        obstacle_ratio=obstacle_ratio,
-        runtime=runtime,
-        expanded=expanded,
-        path_cost=cost,
+    log_result(
+        [
+            algorithm,
+            heuristic_name,
+            rows,
+            cols,
+            obstacle_ratio,
+            seed,
+            runtime,
+            expanded,
+            cost,
+        ]
     )
 
-    log_experiment(metrics)
 
-    return metrics
-
-
-def run_full_suite():
+def run_full_suite() -> None:
     grid_sizes = [(20, 20), (30, 30), (40, 40)]
     obstacle_ratios = [0.1, 0.2, 0.3]
+    seeds = [1, 7, 13, 21, 42]
     algorithms = ["ucs", "greedy", "astar"]
 
     for rows, cols in grid_sizes:
         for ratio in obstacle_ratios:
+            for seed in seeds:
+                # UCS (no heuristic)
+                run_one_experiment(rows, cols, ratio, seed, "ucs")
 
-            # UCS first (no heuristic)
-            run_one_experiment(rows, cols, ratio, "ucs")
-
-            # Then Greedy + A*
-            for h in HEURISTICS:
-                run_one_experiment(rows, cols, ratio, "greedy", h)
-                run_one_experiment(rows, cols, ratio, "astar", h)
+                # Greedy and A* with each heuristic
+                for h_name in HEURISTICS.keys():
+                    run_one_experiment(rows, cols, ratio, seed, "greedy", h_name)
+                    run_one_experiment(rows, cols, ratio, seed, "astar", h_name)
 
     print("[info] Experiment suite complete.")
 
+
 if __name__ == "__main__":
-    print("Sprint 3 experiment runner started!")
     run_full_suite()

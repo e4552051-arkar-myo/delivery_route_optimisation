@@ -1,25 +1,57 @@
-# src/experiments/visualiser.py
+# src/experiments/combined_visualiser.py
 
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-def plot_results(csv_file: str, y_column: str, title: str, output: str):
-    path = Path("data/results") / csv_file
-    df = pd.read_csv(path)
+RESULTS = Path("data/results/experiment_results.csv")
+PLOTS_DIR = Path("data/plots")
+PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    plt.figure(figsize=(12, 6))
+def generate_combined_plots():
+    df = pd.read_csv(RESULTS)
+
+    plt.figure(figsize=(18, 12))
+
+    # Runtime plot
+    plt.subplot(3, 1, 1)
     for algo in df["algorithm"].unique():
         subset = df[df["algorithm"] == algo]
-        plt.plot(subset["rows"], subset[y_column], marker="o", label=algo)
-
-    plt.title(title)
-    plt.xlabel("Grid size (rows)")
-    plt.ylabel(y_column)
-    plt.legend()
+        plt.plot(subset["rows"], subset["runtime"], marker="o", label=algo)
+    plt.title("Runtime Comparison Across Algorithms")
+    plt.xlabel("Grid Size (rows)")
+    plt.ylabel("Runtime")
     plt.grid(True)
+    plt.legend()
 
-    out_path = Path("data/plots") / output
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # Node expansion plot
+    plt.subplot(3, 1, 2)
+    for algo in df["algorithm"].unique():
+        subset = df[df["algorithm"] == algo]
+        plt.plot(subset["rows"], subset["expanded"], marker="o", label=algo)
+    plt.title("Node Expansion Comparison")
+    plt.xlabel("Grid Size (rows)")
+    plt.ylabel("Nodes Expanded")
+    plt.grid(True)
+    plt.legend()
+
+    # Path cost plot
+    plt.subplot(3, 1, 3)
+    for algo in df["algorithm"].unique():
+        subset = df[df["algorithm"] == algo]
+        plt.plot(subset["rows"], subset["path_cost"], marker="o", label=algo)
+    plt.title("Path Cost Comparison")
+    plt.xlabel("Grid Size (rows)")
+    plt.ylabel("Path Cost")
+    plt.grid(True)
+    plt.legend()
+
+    plt.tight_layout()
+    out_path = PLOTS_DIR / "combined_algorithm_performance.png"
     plt.savefig(out_path)
     plt.close()
+    print(f"[INFO] Combined plot saved to: {out_path}")
+
+
+if __name__ == "__main__":
+    generate_combined_plots()
