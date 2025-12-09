@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/Users/arkarmyo/Library/CloudStorage/OneDrive-TeessideUniversity/Artificial Intelligence/delivery_route_optimisation/.venv/bin/python" "$0" "$@"
-' '''
+#!/Users/arkarmyo/Library/CloudStorage/OneDrive-TeessideUniversity/ArtificialIntelligence/delivery_route_optimisation/.venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

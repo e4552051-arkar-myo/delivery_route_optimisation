@@ -90,6 +90,14 @@ def parse_args() -> argparse.Namespace:
         help="Number of training episodes for Q-learning.",
     )
 
+    parser.add_argument(
+        "--rl-mode",
+        type=str,
+        default="classic",
+        choices=["classic", "gym"],
+        help="RL mode: classic Q-learning or Gymnasium-based Q-learning."
+    )
+
     return parser.parse_args()
 
 
@@ -133,21 +141,38 @@ def main() -> None:
     algo_name = args.algo
 
     if algo_name == "qlearning":
-        print(f"[info] Training Q-learning agent for {args.episodes} episodes...")
-        with Timer("Q-learning training"):
-            agent, rewards = train_q_learning(
-                graph=graph,
-                start=start,
-                goal=goal,
-                obstacles=obstacles,
-                rows=rows,
-                cols=cols,
-                episodes=args.episodes,
-            )
 
-        # Plot learning curve
+        if args.rl_mode == "classic":
+            print(f"[info] Training CLASSIC Q-learning agent for {args.episodes} episodes...")
+            with Timer("Classic Q-learning"):
+                agent, rewards = train_q_learning(
+                    graph=graph,
+                    start=start,
+                    goal=goal,
+                    obstacles=obstacles,
+                    rows=rows,
+                    cols=cols,
+                    episodes=args.episodes,
+                )
+
+        else:  # Gym mode
+            print(f"[info] Training GYM Q-learning agent for {args.episodes} episodes...")
+            from src.reinforcement.gym_trainer import train_gym_qlearning
+            with Timer("Gym Q-learning"):
+                agent, rewards = train_gym_qlearning(
+                    rows=rows,
+                    cols=cols,
+                    obstacles=obstacles,
+                    start=start,
+                    goal=goal,
+                    episodes=args.episodes,
+                )
+
+        # Plot reward curve
         plot_reward_curve(rewards)
+        print("[info] Reward curve saved.")
 
+        # Extract path
         path = q_extract_path(
             agent=agent,
             start=start,
@@ -156,47 +181,48 @@ def main() -> None:
             rows=rows,
             cols=cols,
         )
-        cost = float(len(path) - 1) if path else float("inf")
 
+        # Report Q-learning result
         if not path:
-            print("[result] Q-learning could not find a route to the goal.")
+            print("[result] Q-learning did not find a valid path.")
         else:
-            print(f"[result] Q-learning path cost (steps): {cost}")
             print(f"[result] Q-learning path length (nodes): {len(path)}")
+            print(f"[result] Q-learning path cost (steps): {len(path) - 1}")
             print(f"[result] First 10 nodes: {path[:10]}")
+        
         return
 
     # Classical search algorithms
-    hfn = heuristics[args.heuristic]
-    print(f"[info] Running algorithm: {algo_name}")
-
-    with Timer(f"{algo_name.upper()} search"):
-        if algo_name == "ucs":
-            path, cost, expanded, visited_map = uniform_cost_search(graph, start, goal)
-        elif algo_name == "greedy":
-            path, cost, expanded, visited_map = greedy_search(graph, start, goal, hfn)
-        else:  # astar
-            path, cost, expanded, visited_map = a_star_search(graph, start, goal, hfn)
-
-    if not path:
-        print("[result] No path found.")
     else:
-        print(f"[result] Path found with cost={cost}")
-        print(f"[result] Path length (nodes): {len(path)}")
-        print(f"[result] Nodes expanded: {expanded}")
-        print(f"[result] First 10 nodes: {path[:10]}")
+        hfn = heuristics[args.heuristic]
+        print(f"[info] Running algorithm: {algo_name}")
 
-        # Generate heatmap for search expansions
-        heatmap_title = f"{algo_name.upper()} exploration heatmap"
-        heatmap_file = f"{algo_name}_heatmap.png"
-        save_heatmap(
-            visited_map=visited_map,
-            rows=rows,
-            cols=cols,
-            title=heatmap_title,
-            filename=heatmap_file,
-        )
-        print(f"[info] Heatmap saved as data/plots/heatmaps/{heatmap_file}")
+        with Timer(f"{algo_name.upper()} search"):
+            if algo_name == "ucs":
+                path, cost, expanded, visited_map = uniform_cost_search(graph, start, goal)
+            elif algo_name == "greedy":
+                path, cost, expanded, visited_map = greedy_search(graph, start, goal, hfn)
+            else:  # astar
+                path, cost, expanded, visited_map = a_star_search(graph, start, goal, hfn)
+
+        if not path:
+            print("[result] No path found.")
+        else:
+            print(f"[result] Path found with cost={cost}")
+            print(f"[result] Path length (nodes): {len(path)}")
+            print(f"[result] Nodes expanded: {expanded}")
+            print(f"[result] First 10 nodes: {path[:10]}")
+
+            heatmap_title = f"{algo_name.upper()} exploration heatmap"
+            heatmap_file = f"{algo_name}_heatmap.png"
+            save_heatmap(
+                visited_map=visited_map,
+                rows=rows,
+                cols=cols,
+                title=heatmap_title,
+                filename=heatmap_file,
+            )
+            print(f"[info] Heatmap saved as data/plots/heatmaps/{heatmap_file}")
 
 
 if __name__ == "__main__":

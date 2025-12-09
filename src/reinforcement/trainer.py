@@ -65,6 +65,7 @@ def train_q_learning(
                 break
 
         episode_rewards.append(total_reward)
+        agent.decay_epsilon()
 
     return agent, episode_rewards
 

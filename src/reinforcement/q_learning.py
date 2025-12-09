@@ -18,12 +18,18 @@ class QLearningAgent:
         learning_rate: float = 0.1,
         discount: float = 0.99,
         epsilon: float = 0.2,
+        epsilon_min: float = 0.01,
+        epsilon_decay: float = 0.995,
     ) -> None:
         self.rows = rows
         self.cols = cols
         self.lr = learning_rate
         self.gamma = discount
+
+        # Exploration parameters
         self.epsilon = epsilon
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
 
         # Q-table: [rows, cols, actions]
         self.q_table = np.zeros((rows, cols, 4), dtype=float)
@@ -54,3 +60,10 @@ class QLearningAgent:
 
         target = reward + self.gamma * max_next_q
         self.q_table[r, c, action] = current_q + self.lr * (target - current_q)
+
+    def decay_epsilon(self) -> None:
+        """Decay epsilon after each episode."""
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+            if self.epsilon < self.epsilon_min:
+                self.epsilon = self.epsilon_min

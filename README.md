@@ -1,16 +1,17 @@
 # Delivery Route Optimisation  
-**Classical Search • Heuristic Search • Reinforcement Learning (Q-Learning)**  
+Classical Search • Heuristic Search • Reinforcement Learning (Q‑Learning + Gymnasium)  
 MSc Computer Science – ICA Project
 
-This project implements and evaluates multiple search algorithms for delivery‑route optimisation on a grid world. It compares uninformed, informed, and learning‑based approaches in terms of runtime, node expansion, and path optimality.
+This project implements and evaluates multiple search algorithms for delivery‑route optimisation on a grid world. It compares uninformed, informed and learning‑based approaches in terms of runtime, node expansion, path optimality and learning performance. The work combines classical algorithms with reinforcement learning, offering both traditional AI search and modern RL-based route learning.
 
-The system implements:
-- **Uniform Cost Search (UCS)** – baseline optimal uninformed search  
-- **Greedy Best‑First Search** – fast, heuristic‑driven, non‑optimal  
-- **A\* Search** – optimal, admissible heuristic‑guided  
-- **Q‑Learning (Reinforcement Learning)** – model‑free, trial‑and‑error learning  
-- **Experiment Runner** – automated benchmarking suite  
-- **Visualiser** – runtime, expansion, and path‑cost charts  
+The system includes:
+- Uniform Cost Search (UCS) – baseline optimal uninformed search  
+- Greedy Best‑First Search – fast, heuristic‑driven, non‑optimal search  
+- A* Search – optimal, heuristic‑guided search  
+- Q‑Learning (Classic Environment) – table‑based reinforcement learning  
+- Q‑Learning (Gymnasium Environment) – optional Gym‑compatible reinforcement learning  
+- Experiment Runner – automated benchmarking and CSV logging  
+- Visualisers – runtime plots, heatmaps and reward curves  
 
 ---
 
@@ -26,100 +27,118 @@ delivery_route_optimisation/
 ├── src/
 │   ├── algorithms/               # UCS, Greedy, A*
 │   ├── heuristics/               # Manhattan, Euclidean, Chebyshev, Octile
-│   ├── graph/                    # Grid generator + obstacles
-│   ├── utils/                    # Timer + path reconstruction
-│   ├── experiments/              # Experiment runner, CSV logger, visualiser
-│   └── reinforcement/            # Q-learning env + agent + trainer
+│   ├── graph/                    # Grid generator and obstacle placement
+│   ├── utils/                    # Timer and path reconstruction
+│   ├── experiments/              # Experiment runner and visualisation tools
+│   └── reinforcement/
+│       ├── environment.py        # Classic Q-learning environment
+│       ├── q_learning.py         # Q-learning agent
+│       ├── trainer.py            # Classic Q-learning trainer
+│       ├── gym_env.py            # Gymnasium-based grid environment
+│       └── gym_trainer.py        # Gym-based Q-learning trainer
 │
 ├── data/
-│   ├── results/                  # experiment_results.csv (auto‑generated)
-│   └── plots/                    # combined_algorithm_performance.png (auto‑generated)
+│   ├── results/                  # experiment_results.csv (generated)
+│   └── plots/                    # heatmaps, combined charts, RL reward curves
 │
-└── tests/                        # Unit tests for grid + algorithms
+└── tests/                        # Unit tests for classical search and RL
 ```
 
 ---
 
-##  Running the Project
+## Running the Project
 
 ### 1. Create and activate a virtual environment
 
-```bash
+```
 python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 ---
 
-##  Run a Single Algorithm
+## Running Classical Search Algorithms
 
-### **UCS**
-```bash
+### Uniform Cost Search (UCS)
+```
 python main.py --algo ucs
 ```
 
-### **A\*** (Manhattan heuristic)
-```bash
+### A* Search (Manhattan heuristic)
+```
 python main.py --algo astar --heuristic manhattan
 ```
 
-### **Greedy Best‑First Search**
-```bash
+### Greedy Best‑First Search
+```
 python main.py --algo greedy --heuristic euclidean
 ```
 
-### **Q‑Learning** (500 episodes)
-```bash
-python main.py --algo qlearning --episodes 500
+---
+
+## Running Reinforcement Learning
+
+### Q‑Learning — Classic Environment
 ```
+python main.py --algo qlearning --rl-mode classic --episodes 500
+```
+
+### Q‑Learning — Gymnasium Environment
+```
+python main.py --algo qlearning --rl-mode gym --episodes 500
+```
+
+The Gymnasium mode uses the standard Gym API and supports integration with reinforcement learning libraries such as Stable‑Baselines3.
 
 ---
 
 ## Running Experiments
 
-Run full benchmarking suite:
-```bash
+To generate a full benchmarking suite:
+
+```
 python -m src.experiments.experiment_runner
 ```
 
-Generates:
+This produces a consolidated results file:
+
 ```
 data/results/experiment_results.csv
 ```
 
 ---
 
-## Generate Combined Performance Plot
+## Combined Performance Plot
 
-```bash
+```
 python -m src.experiments.visualiser
 ```
 
 Saved to:
+
 ```
 data/plots/combined_algorithm_performance.png
 ```
 
 ---
 
-## Generate Heatmap Visualisations
+## Heatmap Visualisations
 
-After running any search algorithm (UCS, Greedy, A*), a heatmap can be produced showing how many times each grid cell was expanded during the search.
+Each classical search algorithm (UCS, Greedy, A*) can generate a heatmap illustrating how often each grid cell was expanded during search.
 
-Generate heatmaps using:
-
-```bash
-python main.py --algo ucs       # or greedy / astar
+Example:
+```
+python main.py --algo ucs
 ```
 
-Heatmaps are saved automatically to:
+Heatmaps are saved under:
 
 ```
 data/plots/heatmaps/
 ```
 
-Files are named in the format:
+with filenames such as:
 
 ```
 ucs_heatmap.png
@@ -127,44 +146,60 @@ greedy_heatmap.png
 astar_heatmap.png
 ```
 
-These heatmaps help visualise how different algorithms explore the grid, showing clear contrasts between UCS's exhaustive expansion, Greedy's narrow beam‑like search, and A*’s balanced informed exploration.
+These heatmaps highlight the exploration characteristics of each algorithm, clearly showing the contrast between UCS’s exhaustive search, Greedy’s narrow heuristic-driven expansion and A*’s balanced efficiency.
+
+---
+
+## Q‑Learning Reward Curve
+
+Both the classic and Gym‑based Q‑learning modes produce a reward curve file stored at:
+
+```
+data/plots/rl/reward_curve.png
+```
+
+This provides a visual overview of learning progression across training episodes.
+
 ---
 
 # Algorithms Included
 
-## **Uniform Cost Search (UCS)**
+## Uniform Cost Search (UCS)
 - Uninformed search  
-- Always optimal  
-- Very high search cost  
+- Guarantees optimality  
+- High expansion cost on larger grids  
 
-## **Greedy Best‑First Search**
-- Uses only heuristic h(n)  
-- Extremely fast  
-- Not optimal (detours common)  
+## Greedy Best‑First Search
+- Uses only the heuristic h(n)  
+- Very fast  
+- Does not guarantee optimal paths  
 
-## **A\* Search**
+## A* Search
 - Uses f(n) = g(n) + h(n)  
-- Always optimal with admissible heuristics  
-- More efficient than UCS  
+- Optimal when using admissible heuristics  
+- More efficient than UCS in most cases  
 
-## **Q‑Learning**
-- Learns routes through reward signals  
-- Model‑free RL  
-- Not guaranteed optimal  
-- Improves with training  
+## Q‑Learning
+- Reinforcement learning approach  
+- Learns through trial and error  
+- Performance improves with training  
+- Optional Gymnasium mode provides a standard RL interface  
 
 ---
 
 ## Evaluation Metrics
 
-Every experiment logs:
-- Runtime (seconds)  
-- Nodes expanded (search effort)  
-- Path cost (optimality)  
+Each experiment records:
+- Runtime  
+- Number of nodes expanded  
+- Path cost  
 - Heuristic used  
-- Grid size & obstacle ratio  
+- Grid dimensions  
+- Obstacle ratio  
+- Random seed (multi‑seed experiments)  
 
-All metrics are saved to:
+All metrics are written to:
+
 ```
 data/results/experiment_results.csv
 ```
@@ -173,4 +208,4 @@ data/results/experiment_results.csv
 
 ## Summary
 
-This project provides a full experimental comparison between classical search algorithms and reinforcement learning for grid‑based delivery routing. It demonstrates trade‑offs between optimality, speed, and computational cost, and includes a complete experiment suite for reproducible evaluation.
+This project provides a detailed comparison between classical search algorithms and reinforcement learning methods applied to delivery‑route optimisation. The implementation highlights the trade‑offs between optimality, computational cost and search efficiency. The addition of Gymnasium support, heatmaps and comprehensive experimental tools enables a research‑grade evaluation suitable for MSc‑level coursework.
