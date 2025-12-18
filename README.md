@@ -1,17 +1,26 @@
 # Delivery Route Optimisation  
 Classical Search • Heuristic Search • Reinforcement Learning (Q‑Learning + Gymnasium)  
-MSc Computer Science – ICA Project
+MSc Computer Science – Artificial Intelligence (ICA Project)
 
-This project implements and evaluates multiple search algorithms for delivery‑route optimisation on a grid world. It compares uninformed, informed and learning‑based approaches in terms of runtime, node expansion, path optimality and learning performance. The work combines classical algorithms with reinforcement learning, offering both traditional AI search and modern RL-based route learning.
+## Overview
 
-The system includes:
-- Uniform Cost Search (UCS) – baseline optimal uninformed search  
-- Greedy Best‑First Search – fast, heuristic‑driven, non‑optimal search  
-- A* Search – optimal, heuristic‑guided search  
-- Q‑Learning (Classic Environment) – table‑based reinforcement learning  
-- Q‑Learning (Gymnasium Environment) – optional Gym‑compatible reinforcement learning  
-- Experiment Runner – automated benchmarking and CSV logging  
-- Visualisers – runtime plots, heatmaps and reward curves  
+This project explores the **delivery route optimisation problem** using a combination of classical search algorithms, heuristic‑based search, and reinforcement learning. The main goal is to understand how different AI techniques behave when solving routing problems and to compare their performance in terms of efficiency, optimality, and learning behaviour.
+
+The core experiments are carried out in a **grid‑based environment**, which allows full control over problem size, obstacle density, and start/goal positions. To demonstrate real‑world relevance, the project also includes an **OpenStreetMap (OSM) extension** that applies classical search algorithms to a real road network from Middlesbrough.
+
+---
+
+## Algorithms Implemented
+
+The system includes the following algorithms:
+
+- **Uniform Cost Search (UCS)** – baseline uninformed search that guarantees optimal solutions  
+- **Greedy Best‑First Search** – fast heuristic‑driven search without optimality guarantees  
+- **A\* Search** – optimal heuristic‑guided search using admissible heuristics  
+- **Q‑Learning (Classic Environment)** – tabular reinforcement learning on a grid world  
+- **Q‑Learning (Gymnasium Environment)** – optional Gym‑compatible RL implementation  
+- **Experiment Runner** – automated benchmarking and CSV logging  
+- **Visualisers** – heatmaps, grid maps, performance charts, and reward curves  
 
 ---
 
@@ -20,26 +29,29 @@ The system includes:
 ```
 delivery_route_optimisation/
 │
-├── main.py                       # CLI entry point
+├── main.py                       # Command-line entry point
 ├── README.md                     
 ├── requirements.txt              
 │
 ├── src/
 │   ├── algorithms/               # UCS, Greedy, A*
-│   ├── heuristics/               # Manhattan, Euclidean, Chebyshev, Octile
+│   ├── heuristics/
+│   │   ├── grid/                 # Manhattan, Euclidean, Chebyshev, Octile
+│   │   └── osm/                  # OSM-specific heuristics
 │   ├── graph/                    # Grid generator and obstacle placement
-│   ├── utils/                    # Timer and path reconstruction
+│   ├── utils/                    # Timing and path reconstruction utilities
 │   ├── experiments/              # Experiment runner and visualisation tools
-│   └── reinforcement/
-│       ├── environment.py        # Classic Q-learning environment
-│       ├── q_learning.py         # Q-learning agent
-│       ├── trainer.py            # Classic Q-learning trainer
-│       ├── gym_env.py            # Gymnasium-based grid environment
-│       └── gym_trainer.py        # Gym-based Q-learning trainer
+│   ├── reinforcement/
+│   │   ├── environment.py        # Classic Q-learning environment
+│   │   ├── q_learning.py         # Q-learning agent
+│   │   ├── trainer.py            # Classic Q-learning trainer
+│   │   ├── gym_env.py            # Gymnasium-based grid environment
+│   │   └── gym_trainer.py        # Gym-based Q-learning trainer
+│   └── osm/                      # OpenStreetMap loading, graph building and visualisation
 │
 ├── data/
 │   ├── results/                  # experiment_results.csv (generated)
-│   └── plots/                    # heatmaps, combined charts, RL reward curves
+│   └── plots/                    # heatmaps, grid maps, OSM routes, RL reward curves
 │
 └── tests/                        # Unit tests for classical search and RL
 ```
@@ -58,7 +70,7 @@ pip install -r requirements.txt
 
 ---
 
-## Running Classical Search Algorithms
+## Running Classical Search Algorithms (Grid World)
 
 ### Uniform Cost Search (UCS)
 ```
@@ -75,6 +87,11 @@ python main.py --algo astar --heuristic manhattan
 python main.py --algo greedy --heuristic euclidean
 ```
 
+Each run produces:
+- Console output (path cost, nodes expanded)
+- A **grid map** showing the computed route
+- A **heatmap** illustrating node expansion behaviour
+
 ---
 
 ## Running Reinforcement Learning
@@ -89,13 +106,13 @@ python main.py --algo qlearning --rl-mode classic --episodes 500
 python main.py --algo qlearning --rl-mode gym --episodes 500
 ```
 
-The Gymnasium mode uses the standard Gym API and supports integration with reinforcement learning libraries such as Stable‑Baselines3.
+The Gymnasium mode follows the standard Gym API and allows future integration with external RL libraries.
 
 ---
 
 ## Running Experiments
 
-To generate a full benchmarking suite:
+To generate a full benchmarking suite across multiple grid sizes and algorithms:
 
 ```
 python -m src.experiments.experiment_runner
@@ -109,81 +126,52 @@ data/results/experiment_results.csv
 
 ---
 
-## Combined Performance Plot
+## Performance Visualisation
 
+### Combined Performance Plot
 ```
 python -m src.experiments.visualiser
 ```
 
 Saved to:
-
 ```
 data/plots/combined_algorithm_performance.png
 ```
+
+This chart compares runtime, node expansion, and path cost across algorithms.
 
 ---
 
 ## Heatmap Visualisations
 
-Each classical search algorithm (UCS, Greedy, A*) can generate a heatmap illustrating how often each grid cell was expanded during search.
-
-Example:
-```
-python main.py --algo ucs
-```
+Each classical search algorithm (UCS, Greedy, A*) generates a heatmap showing how frequently each grid cell is expanded during search.
 
 Heatmaps are saved under:
-
 ```
 data/plots/heatmaps/
 ```
 
-with filenames such as:
-
-```
-ucs_heatmap.png
-greedy_heatmap.png
-astar_heatmap.png
-```
-
-These heatmaps highlight the exploration characteristics of each algorithm, clearly showing the contrast between UCS’s exhaustive search, Greedy’s narrow heuristic-driven expansion and A*’s balanced efficiency.
+These visualisations clearly highlight the differences between exhaustive, heuristic‑driven, and balanced search strategies.
 
 ---
 
 ## Q‑Learning Reward Curve
 
-Both the classic and Gym‑based Q‑learning modes produce a reward curve file stored at:
+Both the classic and Gym‑based Q‑learning modes generate a reward curve stored at:
 
 ```
 data/plots/rl/reward_curve.png
 ```
 
-This provides a visual overview of learning progression across training episodes.
+This provides a clear visual representation of learning progress across episodes.
 
 ---
 
-# Algorithms Included
+## OpenStreetMap Extension
 
-## Uniform Cost Search (UCS)
-- Uninformed search  
-- Guarantees optimality  
-- High expansion cost on larger grids  
+The project includes an optional real‑world extension using OpenStreetMap data for Middlesbrough. Classical search algorithms (UCS, A*, Greedy) are applied to the road network, and the resulting routes are visualised directly on the map.
 
-## Greedy Best‑First Search
-- Uses only the heuristic h(n)  
-- Very fast  
-- Does not guarantee optimal paths  
-
-## A* Search
-- Uses f(n) = g(n) + h(n)  
-- Optimal when using admissible heuristics  
-- More efficient than UCS in most cases  
-
-## Q‑Learning
-- Reinforcement learning approach  
-- Learns through trial and error  
-- Performance improves with training  
-- Optional Gymnasium mode provides a standard RL interface  
+This extension is intended as a **demonstration of real‑world applicability**, rather than a full experimental comparison.
 
 ---
 
@@ -196,10 +184,9 @@ Each experiment records:
 - Heuristic used  
 - Grid dimensions  
 - Obstacle ratio  
-- Random seed (multi‑seed experiments)  
+- Random seed  
 
 All metrics are written to:
-
 ```
 data/results/experiment_results.csv
 ```
@@ -208,4 +195,4 @@ data/results/experiment_results.csv
 
 ## Summary
 
-This project provides a detailed comparison between classical search algorithms and reinforcement learning methods applied to delivery‑route optimisation. The implementation highlights the trade‑offs between optimality, computational cost and search efficiency. The addition of Gymnasium support, heatmaps and comprehensive experimental tools enables a research‑grade evaluation suitable for MSc‑level coursework.
+This project provides a structured and practical comparison between classical search algorithms and reinforcement learning approaches for delivery route optimisation. The results demonstrate the efficiency of heuristic‑guided search, the trade‑off between speed and optimality, and the limitations of tabular reinforcement learning in large environments. The inclusion of comprehensive visualisation tools and a real‑world OSM extension makes the project suitable for MSc‑level assessment and further extension.

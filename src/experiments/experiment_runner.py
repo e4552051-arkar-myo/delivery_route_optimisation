@@ -18,10 +18,10 @@ from src.algorithms.ucs import uniform_cost_search
 from src.algorithms.greedy import greedy_search
 from src.algorithms.astar import a_star_search
 
-from src.heuristics.manhattan import manhattan
-from src.heuristics.euclidean import euclidean
-from src.heuristics.chebyshev import chebyshev
-from src.heuristics.octile import octile
+from src.heuristics.grid.manhattan import manhattan
+from src.heuristics.grid.euclidean import euclidean
+from src.heuristics.grid.chebyshev import chebyshev
+from src.heuristics.grid.octile import octile
 
 
 RESULTS_PATH = Path("data/results/experiment_results.csv")

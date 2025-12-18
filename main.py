@@ -22,14 +22,15 @@ from src.algorithms.greedy import greedy_search
 from src.algorithms.astar import a_star_search
 from src.utils.timer import Timer
 
-from src.heuristics.manhattan import manhattan
-from src.heuristics.euclidean import euclidean
-from src.heuristics.chebyshev import chebyshev
-from src.heuristics.octile import octile
+from src.heuristics.grid.manhattan import manhattan
+from src.heuristics.grid.euclidean import euclidean
+from src.heuristics.grid.chebyshev import chebyshev
+from src.heuristics.grid.octile import octile
 
 from src.reinforcement.trainer import train_q_learning, extract_path as q_extract_path
 from src.experiments.heatmap_visualiser import save_heatmap
 from src.experiments.rl_visualiser import plot_reward_curve
+from src.experiments.grid_map import draw_grid_map
 
 
 def parse_args() -> argparse.Namespace:
@@ -223,6 +224,18 @@ def main() -> None:
                 filename=heatmap_file,
             )
             print(f"[info] Heatmap saved as data/plots/heatmaps/{heatmap_file}")
+
+            draw_grid_map(
+                rows=rows,
+                cols=cols,
+                obstacles=obstacles,
+                start=start,
+                goal=goal,
+                path=path,
+                explored=set(visited_map.keys()),
+                filename=f"{algo_name}_map.png",
+            )
+            print(f"[info] Grid map with path saved as data/plots/maps/{algo_name}_map.png")
 
 
 if __name__ == "__main__":
