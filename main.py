@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 from typing import Tuple
+from collections import deque
 
 from src.graph.grid_builder import GridConfig, build_grid_graph
 from src.algorithms.ucs import uniform_cost_search
@@ -101,6 +102,18 @@ def parse_args() -> argparse.Namespace:
 
     return parser.parse_args()
 
+def is_reachable(graph, start, goal) -> bool:
+    q = deque([start])
+    seen = {start}
+    while q:
+        n = q.popleft()
+        if n == goal:
+            return True
+        for nb, _ in graph.get(n, []):
+            if nb not in seen:
+                seen.add(nb)
+                q.append(nb)
+    return False
 
 def main() -> None:
     args = parse_args()
@@ -122,7 +135,38 @@ def main() -> None:
     )
 
     print(f"[info] Building {rows}x{cols} grid (obstacle_ratio={args.obstacle_ratio})...")
-    graph, obstacles = build_grid_graph(cfg)
+    # graph, obstacles = build_grid_graph(cfg, protected={start, goal})
+    max_tries = 50
+    graph = None
+    obstacles = None
+    used_seed = None
+
+    for i in range(max_tries):
+        cfg_try = GridConfig(
+            rows=rows,
+            cols=cols,
+            obstacle_ratio=args.obstacle_ratio,
+            seed=args.seed + i,
+        )
+
+        # If your build_grid_graph supports "protected", use it.
+        # This guarantees start/goal will never be obstacles.
+        try:
+            g, obs = build_grid_graph(cfg_try, protected={start, goal})
+        except TypeError:
+            # Fallback if your build_grid_graph does not have protected= yet
+            g, obs = build_grid_graph(cfg_try)
+
+        # Make sure start/goal exist and are connected
+        if start in g and goal in g and is_reachable(g, start, goal):
+            graph, obstacles = g, obs
+            used_seed = cfg_try.seed
+            if i > 0:
+                print(f"[warn] Seed {args.seed} produced no path. Using seed {used_seed} instead.")
+            break
+
+    if graph is None:
+        raise RuntimeError(f"Failed to generate a solvable grid after {max_tries} attempts.")
 
     if start not in graph:
         raise ValueError(f"Start cell {start} is blocked or out of bounds.")

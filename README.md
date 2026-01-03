@@ -173,6 +173,11 @@ The project includes an optional real‑world extension using OpenStreetMap data
 
 This extension is intended as a **demonstration of real‑world applicability**, rather than a full experimental comparison.
 
+To run the OpenStreetMap demonstration:
+
+```
+python -m src.osm.osm_example
+```
 ---
 
 ## Evaluation Metrics
@@ -190,6 +195,22 @@ All metrics are written to:
 ```
 data/results/experiment_results.csv
 ```
+
+---
+
+## Running Tests
+
+Unit tests are provided to verify the correctness of grid generation, search algorithms, and reinforcement learning components.
+
+To run all tests:
+
+```
+pytest
+```
+Tests are located in the `tests/` directory and cover:
+- Grid graph generation
+- Uniform Cost Search, Greedy, and A* correctness
+- Q-learning behaviour on small environments
 
 ---
 

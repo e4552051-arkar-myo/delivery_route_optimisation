@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple
 import random
 
+from typing import Optional, Iterable
+
 Node = Tuple[int, int]
 Graph = Dict[Node, List[Tuple[Node, float]]]
 
@@ -23,28 +25,37 @@ class GridConfig:
             raise ValueError("rows and cols must be positive.")
 
 
-def _generate_obstacles(cfg: GridConfig) -> Set[Node]:
+def _generate_obstacles(cfg: GridConfig, protected: Optional[Iterable[Node]] = None) -> Set[Node]:
     rng = random.Random(cfg.seed)
+    protected_set = set(protected) if protected else set()
+
     total_cells = cfg.rows * cfg.cols
     num_obstacles = int(total_cells * cfg.obstacle_ratio)
 
     all_cells = [(r, c) for r in range(cfg.rows) for c in range(cfg.cols)]
-    obstacles = set(rng.sample(all_cells, k=num_obstacles)) if num_obstacles > 0 else set()
+    # remove protected cells so they can’t become obstacles
+    candidate_cells = [cell for cell in all_cells if cell not in protected_set]
+
+    # cap k so sample never fails on very small grids / high ratios
+    k = min(num_obstacles, len(candidate_cells))
+    obstacles = set(rng.sample(candidate_cells, k=k)) if k > 0 else set()
     return obstacles
 
 
-def build_grid_graph(cfg: GridConfig) -> Tuple[Graph, Set[Node]]:
+def build_grid_graph(cfg: GridConfig, protected: Optional[Iterable[Node]] = None) -> Tuple[Graph, Set[Node]]:
     """
-    Build a 4-connected grid graph with uniform edge cost = 1.
+    Build a 4-connected grid graph where each free cell is a node and edges
+    connect orthogonal neighbors with unit cost.
 
     Args:
-        cfg: GridConfig with rows, cols, obstacle_ratio, seed.
+        cfg: GridConfig defining grid dimensions, obstacle ratio, and RNG seed.
+        protected: Optional iterable of node coordinates that must remain free.
 
     Returns:
-        graph: adjacency list {node: [(neighbor, cost), ...]} for free cells.
-        obstacles: set of blocked cells.
+        Tuple[Graph, Set[Node]]: adjacency mapping of free nodes to lists of
+        (neighbor, cost) pairs, and the set of obstacle nodes.
     """
-    obstacles = _generate_obstacles(cfg)
+    obstacles = _generate_obstacles(cfg, protected=protected)
     graph: Graph = {}
 
     def is_free(r: int, c: int) -> bool:
